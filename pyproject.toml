@@ -1,0 +1,16 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --cov --cov-report=term-missing --cov-fail-under=100"
+markers = [
+    "unit: проверки без базы и сети",
+    "db: ограничения, связи и миграции на настоящем PostgreSQL",
+    "integration: HTTP-запросы к приложению через TestClient",
+    "e2e: сценарии по HTTP к запущенному серверу",
+]
+
+[tool.coverage.run]
+source = ["app", "./alembic"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
