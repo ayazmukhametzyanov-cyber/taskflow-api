@@ -1,9 +1,6 @@
 import io
 
 import pytest
-from alembic.config import Config
-from alembic.runtime.migration import MigrationContext
-from alembic.script import ScriptDirectory
 from helpers import (
     ROOT,
     TEST_DATABASE_URL,
@@ -15,6 +12,9 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 
 from alembic import command
+from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from app.config import settings
 
 TABLES = {"users", "projects", "labels", "tasks", "comments"}
@@ -23,8 +23,10 @@ TABLES = {"users", "projects", "labels", "tasks", "comments"}
 @pytest.fixture
 def scratch_url(monkeypatch):
     """Отдельная база: миграции вверх-вниз не должны трогать общую тестовую."""
-    url = make_url(TEST_DATABASE_URL).set(database="taskflow_migrations").render_as_string(
-        hide_password=False
+    url = (
+        make_url(TEST_DATABASE_URL)
+        .set(database="taskflow_migrations")
+        .render_as_string(hide_password=False)
     )
     ensure_database(url)
     recreate_schema(url)

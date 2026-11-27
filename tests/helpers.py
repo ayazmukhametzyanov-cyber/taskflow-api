@@ -1,15 +1,16 @@
 import os
 from pathlib import Path
 
-from alembic.config import Config
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
+
+from alembic.config import Config
 
 ROOT = Path(__file__).resolve().parent.parent
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
-    "postgresql+psycopg2://taskflow:taskflow@localhost:5433/taskflow_test",
+    "postgresql+psycopg2://taskflow:taskflow@localhost:5432/taskflow_test",
 )
 # приложение и alembic читают адрес базы при импорте, поэтому подменяем его до импорта app
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL

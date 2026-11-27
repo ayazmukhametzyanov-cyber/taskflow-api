@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -6,6 +8,8 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.routers._common import raise_conflict
+
+logger = logging.getLogger("app.projects")
 
 router = APIRouter()
 
@@ -30,6 +34,7 @@ def get_project(project_id: int, db: Session = Depends(get_db)):
 @router.post("", response_model=schemas.ProjectRead, status_code=status.HTTP_201_CREATED)
 def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)):
     project = models.Project(**payload.model_dump())
+    logger.info("Создание проекта name=%s", payload.name)
     db.add(project)
     try:
         db.commit()
@@ -41,10 +46,9 @@ def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)
 
 
 @router.patch("/{project_id}", response_model=schemas.ProjectRead)
-def update_project(
-    project_id: int, payload: schemas.ProjectUpdate, db: Session = Depends(get_db)
-):
+def update_project(project_id: int, payload: schemas.ProjectUpdate, db: Session = Depends(get_db)):
     project = _get_or_404(db, project_id)
+    logger.info("Обновление проекта id=%s", project_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(project, field, value)
     try:
@@ -56,12 +60,19 @@ def update_project(
     return project
 
 
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{project_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
+)
 def delete_project(project_id: int, db: Session = Depends(get_db)) -> None:
     project = _get_or_404(db, project_id)
+    logger.info("Удаление проекта id=%s", project_id)
     db.delete(project)
     try:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
         raise_conflict(exc)
+

@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from __future__ import annotations
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException,Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -6,6 +9,8 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.routers._common import raise_conflict
+
+logger = logging.getLogger("app.tasks")
 
 router = APIRouter()
 
@@ -39,6 +44,7 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
 @router.post("", response_model=schemas.TaskRead, status_code=status.HTTP_201_CREATED)
 def create_task(payload: schemas.TaskCreate, db: Session = Depends(get_db)):
     task = models.Task(**payload.model_dump())
+    logger.info("Создание задачи title=%s project_id=%s", payload.title, payload.project_id)
     db.add(task)
     try:
         db.commit()
@@ -50,10 +56,9 @@ def create_task(payload: schemas.TaskCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{task_id}", response_model=schemas.TaskRead)
-def update_task(
-    task_id: int, payload: schemas.TaskUpdate, db: Session = Depends(get_db)
-):
+def update_task(task_id: int, payload: schemas.TaskUpdate, db: Session = Depends(get_db)):
     task = _get_or_404(db, task_id)
+    logger.info("Обновление задачи id=%s", task_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(task, field, value)
     try:
@@ -65,9 +70,15 @@ def update_task(
     return task
 
 
-@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{task_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
+)
 def delete_task(task_id: int, db: Session = Depends(get_db)) -> None:
     task = _get_or_404(db, task_id)
+    logger.info("Удаление задачи id=%s", task_id)
     db.delete(task)
     try:
         db.commit()

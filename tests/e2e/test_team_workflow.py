@@ -1,4 +1,5 @@
 """Сценарии «как у клиента»: настоящий сервер, настоящая база, только HTTP."""
+
 import httpx
 
 
@@ -31,9 +32,7 @@ def test_task_lifecycle_from_creation_to_removal(http):
     )
     assert task["status"] == "open"
 
-    comment = post(
-        http, "/v1/comments", task_id=task["id"], author_id=admin["id"], body="срочно"
-    )
+    comment = post(http, "/v1/comments", task_id=task["id"], author_id=admin["id"], body="срочно")
     assert comment["body"] == "срочно"
 
     started = http.patch(f"/v1/tasks/{task['id']}", json={"status": "in_progress"})

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -6,6 +8,8 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.routers._common import raise_conflict
+
+logger = logging.getLogger("app.comments")
 
 router = APIRouter()
 
@@ -36,6 +40,7 @@ def get_comment(comment_id: int, db: Session = Depends(get_db)):
 @router.post("", response_model=schemas.CommentRead, status_code=status.HTTP_201_CREATED)
 def create_comment(payload: schemas.CommentCreate, db: Session = Depends(get_db)):
     comment = models.Comment(**payload.model_dump())
+    logger.info("Создание комментария task_id=%s author_id=%s", payload.task_id, payload.author_id)
     db.add(comment)
     try:
         db.commit()
@@ -47,10 +52,9 @@ def create_comment(payload: schemas.CommentCreate, db: Session = Depends(get_db)
 
 
 @router.patch("/{comment_id}", response_model=schemas.CommentRead)
-def update_comment(
-    comment_id: int, payload: schemas.CommentUpdate, db: Session = Depends(get_db)
-):
+def update_comment(comment_id: int, payload: schemas.CommentUpdate, db: Session = Depends(get_db)):
     comment = _get_or_404(db, comment_id)
+    logger.info("Обновление комментария id=%s", comment_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(comment, field, value)
     try:
@@ -62,9 +66,15 @@ def update_comment(
     return comment
 
 
-@router.delete("/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{comment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
+)
 def delete_comment(comment_id: int, db: Session = Depends(get_db)) -> None:
     comment = _get_or_404(db, comment_id)
+    logger.info("Удаление комментария id=%s", comment_id)
     db.delete(comment)
     try:
         db.commit()

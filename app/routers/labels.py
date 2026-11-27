@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException,Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -6,6 +8,8 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.routers._common import raise_conflict
+
+logger = logging.getLogger("app.labels")
 
 router = APIRouter()
 
@@ -30,6 +34,7 @@ def get_label(label_id: int, db: Session = Depends(get_db)):
 @router.post("", response_model=schemas.LabelRead, status_code=status.HTTP_201_CREATED)
 def create_label(payload: schemas.LabelCreate, db: Session = Depends(get_db)):
     label = models.Label(**payload.model_dump())
+    logger.info("Создание метки name=%s", payload.name)
     db.add(label)
     try:
         db.commit()
@@ -41,10 +46,9 @@ def create_label(payload: schemas.LabelCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{label_id}", response_model=schemas.LabelRead)
-def update_label(
-    label_id: int, payload: schemas.LabelUpdate, db: Session = Depends(get_db)
-):
+def update_label(label_id: int, payload: schemas.LabelUpdate, db: Session = Depends(get_db)):
     label = _get_or_404(db, label_id)
+    logger.info("Обновление метки id=%s", label_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(label, field, value)
     try:
@@ -56,9 +60,15 @@ def update_label(
     return label
 
 
-@router.delete("/{label_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{label_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
+)
 def delete_label(label_id: int, db: Session = Depends(get_db)) -> None:
     label = _get_or_404(db, label_id)
+    logger.info("Удаление метки id=%s", label_id)
     db.delete(label)
     try:
         db.commit()
