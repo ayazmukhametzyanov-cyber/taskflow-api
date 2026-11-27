@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
@@ -11,6 +12,7 @@ HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
 
 
 # ---------------- USERS ----------------
+
 
 class UserCreate(BaseModel):
     email: str = Field(max_length=255)
@@ -36,6 +38,7 @@ class UserRead(BaseModel):
 
 # ---------------- PROJECTS ----------------
 
+
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: str | None = None
@@ -57,6 +60,7 @@ class ProjectRead(BaseModel):
 
 # ---------------- LABELS ----------------
 
+
 class LabelCreate(BaseModel):
     name: str = Field(min_length=1, max_length=64)
     color: str = Field(default="#6b7280", pattern=HEX_COLOR)
@@ -76,6 +80,7 @@ class LabelRead(BaseModel):
 
 
 # ---------------- TASKS ----------------
+
 
 class TaskCreate(BaseModel):
     project_id: int
@@ -112,6 +117,7 @@ class TaskRead(BaseModel):
 
 
 # ---------------- COMMENTS ----------------
+
 
 class CommentCreate(BaseModel):
     task_id: int

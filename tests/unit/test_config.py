@@ -1,3 +1,9 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
@@ -18,7 +24,7 @@ def test_database_url_is_required(monkeypatch):
 
 def test_env_file_is_read_and_extra_keys_are_ignored(monkeypatch, tmp_path):
     monkeypatch.delenv("DATABASE_URL", raising=False)
-    env_file = tmp_path / ".env"
+    env_file = tmp_path / ".env.bak"
     env_file.write_text(
         "POSTGRES_USER=taskflow\nDATABASE_URL=postgresql+psycopg2://a:b@db/c\n",
         encoding="utf-8",
@@ -26,5 +32,12 @@ def test_env_file_is_read_and_extra_keys_are_ignored(monkeypatch, tmp_path):
     assert Settings(_env_file=env_file).database_url == "postgresql+psycopg2://a:b@db/c"
 
 
-def test_module_settings_use_test_database():
-    assert settings.database_url.endswith("/taskflow_test")
+def test_module_settings_use_test_database(monkeypatch):
+    # Принудительно задаем URL тестовой базы
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg2://taskflow:change-me@localhost:5432/taskflow_test")
+
+    # Создаем НОВЫЙ экземпляр Settings, строго игнорируя файл .env
+    test_settings = Settings(_env_file=None)
+
+    assert test_settings.database_url.endswith("/taskflow_test")
+

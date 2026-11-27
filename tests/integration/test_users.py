@@ -8,9 +8,7 @@ def test_list_is_empty_at_start(client):
 
 
 def test_create_returns_201_with_defaults(client):
-    response = client.post(
-        "/v1/users", json={"email": "ivan@example.com", "display_name": "Иван"}
-    )
+    response = client.post("/v1/users", json={"email": "ivan@example.com", "display_name": "Иван"})
     assert response.status_code == 201
     body = response.json()
     assert body["id"] == 1

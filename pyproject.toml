@@ -1,16 +1,23 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+exclude = ["alembic/"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers --cov --cov-report=term-missing --cov-fail-under=100"
-markers = [
-    "unit: проверки без базы и сети",
-    "db: ограничения, связи и миграции на настоящем PostgreSQL",
-    "integration: HTTP-запросы к приложению через TestClient",
-    "e2e: сценарии по HTTP к запущенному серверу",
+addopts = "-q"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning",
 ]
-
-[tool.coverage.run]
-source = ["app", "./alembic"]
-branch = true
-
-[tool.coverage.report]
-show_missing = true

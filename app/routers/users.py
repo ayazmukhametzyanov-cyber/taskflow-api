@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -7,6 +9,7 @@ from app import models, schemas
 from app.database import get_db
 from app.routers._common import raise_conflict
 
+logger = logging.getLogger("app.users")
 router = APIRouter()
 
 
@@ -30,6 +33,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
 @router.post("", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(payload: schemas.UserCreate, db: Session = Depends(get_db)):
     user = models.User(**payload.model_dump())
+    logger.info("Создание пользователя email=%s", payload.email)
     db.add(user)
     try:
         db.commit()
@@ -41,10 +45,9 @@ def create_user(payload: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{user_id}", response_model=schemas.UserRead)
-def update_user(
-    user_id: int, payload: schemas.UserUpdate, db: Session = Depends(get_db)
-):
+def update_user(user_id: int, payload: schemas.UserUpdate, db: Session = Depends(get_db)):
     user = _get_or_404(db, user_id)
+    logger.info("Обновление пользователя id=%s", user_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(user, field, value)
     try:
@@ -56,12 +59,19 @@ def update_user(
     return user
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
+)
 def delete_user(user_id: int, db: Session = Depends(get_db)) -> None:
     user = _get_or_404(db, user_id)
+    logger.info("Удаление пользователя id=%s", user_id)
     db.delete(user)
     try:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
         raise_conflict(exc)
+

@@ -14,7 +14,10 @@ def test_user_create_rejects_unknown_role():
         schemas.UserCreate(email="a@example.com", display_name="A", role="root")
 
 
-@pytest.mark.parametrize("name, ok", [("", False), ("x", True), ("x" * 255, True), ("x" * 256, False)])
+@pytest.mark.parametrize(
+    "name, ok",
+    [("", False), ("x", True), ("x" * 255, True), ("x" * 256, False)],
+)
 def test_user_display_name_length(name, ok):
     if ok:
         assert schemas.UserCreate(email="a@example.com", display_name=name)
@@ -38,7 +41,10 @@ def test_user_update_is_all_optional():
         schemas.UserUpdate(display_name="")
 
 
-@pytest.mark.parametrize("name, ok", [("", False), ("x", True), ("x" * 200, True), ("x" * 201, False)])
+@pytest.mark.parametrize(
+    "name, ok",
+    [("", False), ("x", True), ("x" * 200, True), ("x" * 201, False)],
+)
 def test_project_name_length(name, ok):
     if ok:
         assert schemas.ProjectCreate(name=name).name == name
